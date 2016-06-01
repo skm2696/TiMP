@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+
+int tocSearch(ifstream& file, string strTag)
+{
+	bool flag_c = 0;
+	bool flag_t = 0;
+	string strBuf;
+	char * ptr;
+	string it;
+	while (file.good())
+	{
+		getline(file, strBuf);
+
+		if (!flag_c)
+			flag_c = (bool)(strstr(strBuf.c_str(), "/**"));
+			
+		if (flag_c)
+		{
+			if (!flag_t)
+			{
+				ptr = (char*)strstr(strBuf.c_str(), strTag.c_str());
+				if (ptr)
+					ptr += strTag.size() + 1;
+
+				flag_t = (bool)(ptr);
+			}
+			else
+				 ptr = (char*) strBuf.c_str();
+			if ((bool)strstr(strBuf.c_str(), "*/"))
+			{
+				flag_c = 0;
+				flag_t = 0;
+			}
+
+			if (flag_t)
+				cout << ptr << endl;
+		}
+
+	}
+	return 0;
+}
+
+int main(int argc, char * argv[])
+{
+	if (argc <= 1)
+	{
+		cout << "No file!!! Try again" << endl;
+		return 0;
+	}
+	string  strTag;
+	
+	if (argc == 2)
+	{
+		strTag = "\\func";
+	}
+	
+	if (argc > 2)
+	{
+		strTag = string("\\") + string(argv[2]);
+	}
+	string strFileName(argv[1]);
+
+	cout << strFileName << "\n" << strTag << endl;
+	ifstream Text(strFileName);
+	tocSearch(Text, strTag);
+	system("pause");
+    return 0;
+}

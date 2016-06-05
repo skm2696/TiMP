@@ -1,65 +1,122 @@
 #include <iostream>
+#include <map>
 #include <string>
-using namespace std;
+#include <vector>
+#include <sstream>
 
-class Base {
+class Base
+{
 public:
-	Base *createBase(int x);
-	int add_value(int y){ value = y; return value; }
+    Base(const int value)
+    :_value(value) {}
+    virtual void show() = 0;
 protected:
-	int value;
+    int _value;
 };
 
-class A : public Base{};
-class B : public Base{};
-class C : public Base{};
+class A : public Base
+{
+public:
+    A(const int value)
+    :Base(value) {}
+    void show() {
+        std::cout << "class A: " << _value << std::endl;
+    }
+};
 
-Base* Base::createBase(int x){
-		Base *base = NULL;
-		switch (x){
-		case 1: base = new A; break;
-		case 2: base = new B; break;
-		case 3: base = new C; break;
-		}
-		return base;
-	}
+class B : public Base
+{
+public:
+    B(const int value)
+    :Base(value) {}
+    void show() {
+        std::cout << "class B: " << _value << std::endl;
+    }
+};
 
-int main(){
-	int n; string s; Base BASE;
-	cin >> n;
-	int* mA = new int[n]; int kA = 0;
-	int* mB = new int[n]; int kB = 0;
-	int* mC = new int[n]; int kC = 0;
-	while (n){
-		getline(cin, s);
-		if (!s.find("create")){
-			n--;
-			s.erase(0, 7);
-			if (s.substr(0, 1) == "A"){
-				s.erase(0, 2);
-				int y = atoi(s.c_str());
-				mA[kA]= BASE.createBase(1)->add_value(y);
-				kA++;
-			}
-			if (s.substr(0, 1) == "B"){
-				s.erase(0, 2);
-				int y = atoi(s.c_str());
-				mB[kB] = BASE.createBase(2)->add_value(y);
-				kB++;
-			}		
-			if (s.substr(0, 1) == "C"){
-				s.erase(0, 2);
-				int y = atoi(s.c_str());
-				mC[kC] = BASE.createBase(3)->add_value(y);
-				kC++;
-			}
-		}
-		if (s == "showall"){
-			n--;
-			for (int i = 0; i < kA; i++) cout << "class A: " << mA[i] << endl;
-			for (int i = 0; i < kB; i++) cout << "class B: " << mB[i] << endl;
-			for (int i = 0; i < kC; i++) cout << "class C: " << mC[i] << endl;
-		}
-	}
-	system("pause");
+class C : public Base
+{
+public:
+    C(int value)
+    :Base(value) {}
+    void show() {
+        std::cout << "class C: " << _value << std::endl;
+    }
+};
+std::vector<Base*> objects;
+
+class Functor
+{
+public:
+    virtual void operator()() {};
+    virtual void operator()(std::string, int) {};
+};
+
+class FunctorShow : public Functor
+{
+public:
+    FunctorShow() {};
+    void operator()() {
+        for (auto it : objects)
+            it->show();
+    }
+};
+
+class FunctorCreate : public Functor
+{
+public:
+    FunctorCreate() {};
+    void operator()(std::string classname, int value) {
+        std::map<std::string, Base*> classes;
+        classes["A"] = new A(value);
+        classes["B"] = new B(value);
+        classes["C"] = new C(value);
+        Base* base;
+        base = classes[classname];
+        objects.push_back(base);
+    }
+};
+
+std::vector<std::string> separation(const std::string &s)
+{
+    std::vector<std::string> words;
+    std::istringstream ist(s);
+    std::string tmp;
+    while (ist >> tmp)
+        words.push_back(tmp);
+    return words;
+}
+
+int main()
+{
+    std::map<std::string, Functor*> mfunc;
+    Functor *fshow = new FunctorShow;
+    Functor *fcreate = new FunctorCreate;
+    mfunc["showall"] = fshow;
+    mfunc["create"] = fcreate;
+    std::string command;
+    std::vector<std::string> words;
+    Functor *fctr;
+    int n;
+    std::cin >> n;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    for (std::size_t i = 1; i <= n; ++i)
+    {
+        std::getline(std::cin, command);
+        words = separation(command);
+        fctr = mfunc[words[0]];
+        switch (words.size()) {
+            case 1:
+                (*fctr)();
+                break;
+            case 3:
+                (*fctr)(words[1], stoi(words[2]));
+                break;
+            default:
+                std::cout << "Wrong command!\n";
+                --i;
+                break;
+        }
+    }
+    return 0;
 }
